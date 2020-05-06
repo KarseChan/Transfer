@@ -2,17 +2,20 @@ package com.Karse.event.controller;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.HashMap;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import com.Karse.event.dao.impl.UserDaoImpl;
 import com.Karse.event.entity.User;
 import com.Karse.event.service.UserService;
 import com.Karse.event.service.impl.UserServiceImpl;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Servlet implementation class LoginServlet
@@ -35,8 +38,7 @@ public class LoginServlet extends HttpServlet {
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		// TODO Auto-generated method stub
-		response.getWriter().append("Served at: ").append(request.getContextPath());
+		this.doPost(request, response);
 	}
 
 	/**
@@ -44,46 +46,64 @@ public class LoginServlet extends HttpServlet {
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		//设置编码
-		response.setContentType("text/html;charset=UTF-8");
-		request.setCharacterEncoding("utf-8");
+//		request.setCharacterEncoding("utf-8");
 		
-		//页面输出
-        PrintWriter out = response.getWriter();
+		//验证校验
+		String check = request.getParameter("checkImageCode");
+		//从sesion中获取验证码
+		HttpSession session = request.getSession();
+		String checkCode = (String)session.getAttribute("checkImageCode");
+		
+		//保证验证码只能使用一次
+		session.removeAttribute("checkImageCode");
+		
+		//比较
+		if(!checkCode.equals(check)){
+			//验证码错误
+			java.util.Map<String, Object> map = new HashMap<String,Object>();
+			map.put("flag", false);
+			map.put("msg", "验证码错误");
+			
+			//将map对象转换成json,并传递给客户端	
+	 		ObjectMapper mapper = new ObjectMapper();
+			response.setContentType("application/json;charset=utf-8");
+	 		mapper.writeValue(response.getWriter(), map);
+			return;
+		}
         
         //包装成实体类
-        String userName = request.getParameter("name");
+        String userEmail = request.getParameter("email");
         String password = request.getParameter("password");
         User input = new User();
-        input.setName(userName);
-        input.setPassword(password);
-        //数据库返回的实体类
-        User user = userService.login(input);
-        if(userName==null||"".equals(userName))
-        {
-            out.print("<script language='javaScript'> alert('用户名不能为空');</script>");
-            response.setHeader("refresh", "0;url=user_login.jsp");
-        }
-        else if(password==null||"".equals(password)){
-        	out.print("<script language='javaScript'> alert('密码不能为空');</script>");
-            response.setHeader("refresh", "0;url=user_login.jsp");
-        }
-        else if(user.getName() == null||"".equals(user.getName())){
-        	//用户名不存在
-        	out.print("<script language='javaScript'> alert('用户名不存在');</script>");
-            response.setHeader("refresh", "0;url=user_login.jsp");
-        }
-        else if(user.getPassword() == null||"".equals(user.getPassword())){
-        	//密码错误
-        	out.print("<script language='javaScript'> alert('密码错误');</script>");
-            response.setHeader("refresh", "0;url=user_login.jsp");
+        input.setEmail(userEmail);
+        input.setPassword(password); 
+        
+        //调用service查询
+        User user = userService.login(input);       
+        
+        java.util.Map<String, Object> map = new HashMap<String,Object>();
+        
+         if(user == null){
+        	//实体类不存在
+        	map.put("flag", false);
+         	map.put("msg", "邮箱或密码错误");
         }
         else{
-        	//登录成功
-        	//存储数据
-        	request.setAttribute("user", user);
-        	//转发
-        	request.getRequestDispatcher("/successLogin").forward(request, response);
-        }
+        	//登录成功      	
+        	map.put("flag", true);
+         	map.put("msg", "登录成功");
+         	map.put("role", user.getRole());
+         	
+        }	
+         
+     	//将map对象转换成json,并传递给客户端	
+ 		ObjectMapper mapper = new ObjectMapper();
+ 				
+ 		//将数值返回客户端
+ 		//设置类型
+ 		response.setContentType("application/json;charset=utf-8");
+ 		mapper.writeValue(response.getWriter(), map);
+    		
         
 	}
 

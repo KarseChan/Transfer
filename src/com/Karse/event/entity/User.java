@@ -8,13 +8,13 @@ public class User {
 	
 	/**
 	 * id-编号
-	 * name-用户名
+	 * email-邮箱
 	 * password-密码
 	 * role-权限
 	 */
 	
 	private int id;  
-	private String name;  
+	private String email;  
 	private String password; 
 	private int role; 
 	
@@ -24,11 +24,11 @@ public class User {
 	public void setId(int id) {
 		this.id = id;
 	}
-	public String getName() {
-		return name;
+	public String getEmail() {
+		return email;
 	}
-	public void setName(String name) {
-		this.name = name;
+	public void setEmail(String email) {
+		this.email = email;
 	}
 	public String getPassword() {
 		return password;
